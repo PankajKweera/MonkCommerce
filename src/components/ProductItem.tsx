@@ -107,13 +107,13 @@ export default function ProductItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-white border border-gray-200 rounded-lg p-4 mb-4"
+      className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 mb-4"
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-2 sm:gap-3">
         <div
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing flex items-center justify-center mt-1 text-gray-400 hover:text-gray-600"
+          className="cursor-grab active:cursor-grabbing flex items-center justify-center mt-1 text-gray-400 hover:text-gray-600 flex-shrink-0"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -121,6 +121,7 @@ export default function ProductItem({
             height="16"
             viewBox="0 0 12 16"
             fill="currentColor"
+            className="w-3 h-4 sm:w-3 sm:h-4"
           >
             <circle cx="3" cy="4" r="1.5" />
             <circle cx="9" cy="4" r="1.5" />
@@ -131,21 +132,21 @@ export default function ProductItem({
           </svg>
         </div>
 
-        <span className="text-gray-600 font-medium mt-1">{index + 1}.</span>
+        <span className="text-gray-600 font-medium mt-1 text-sm sm:text-base flex-shrink-0">{index + 1}.</span>
 
         <img
           src={product.product.image?.src || '/placeholder.png'}
           alt={product.product.title}
-          className="w-16 h-16 object-cover rounded"
+          className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded flex-shrink-0"
         />
 
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2 flex-1">
-              <h3 className="font-medium text-gray-900">{product.product.title}</h3>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <h3 className="font-medium text-gray-900 text-sm sm:text-base truncate">{product.product.title}</h3>
               <button
                 onClick={onEdit}
-                className="p-1 text-gray-400 hover:text-blue-500"
+                className="p-1 text-gray-400 hover:text-blue-500 flex-shrink-0"
                 title="Edit Product"
               >
                 <svg
@@ -165,9 +166,9 @@ export default function ProductItem({
               </button>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {product.discount ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
                   <input
                     type="number"
                     min="0"
@@ -175,12 +176,12 @@ export default function ProductItem({
                     max={product.discount.type === 'percentage' ? '100' : undefined}
                     value={product.discount.value}
                     onChange={(e) => handleProductDiscountChange(e.target.value, product.discount!.type)}
-                    className="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-14 sm:w-16 px-2 py-1 text-xs sm:text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                   <select
                     value={product.discount.type === 'flat' ? 'flat' : 'percentage'}
                     onChange={(e) => handleProductDiscountChange(product.discount!.value.toString(), e.target.value as 'flat' | 'percentage')}
-                    className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="px-2 py-1 text-xs sm:text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   >
                     <option value="flat">flat off</option>
                     <option value="percentage">% off</option>
@@ -196,7 +197,7 @@ export default function ProductItem({
               ) : (
                 <button
                   onClick={() => handleProductDiscountChange('0', 'percentage')}
-                  className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+                  className="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-green-500 text-white rounded hover:bg-green-600 whitespace-nowrap"
                 >
                   Add Discount
                 </button>
@@ -343,13 +344,13 @@ function VariantItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center justify-between p-2 bg-gray-50 rounded"
+      className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-2 bg-gray-50 rounded"
     >
-      <div className="flex items-center gap-2 flex-1">
+      <div className="flex items-center gap-2 flex-1 min-w-0">
         <div
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
+          className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 flex-shrink-0"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -357,6 +358,7 @@ function VariantItem({
             height="16"
             viewBox="0 0 12 16"
             fill="currentColor"
+            className="w-3 h-4"
           >
             <circle cx="3" cy="4" r="1.5" />
             <circle cx="9" cy="4" r="1.5" />
@@ -366,10 +368,10 @@ function VariantItem({
             <circle cx="9" cy="12" r="1.5" />
           </svg>
         </div>
-        <div className="font-medium text-sm">{variant.title}</div>
+        <div className="font-medium text-xs sm:text-sm truncate">{variant.title}</div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2 flex-wrap w-full sm:w-auto">
         {variantDiscount ? (
           <>
             <input
@@ -379,12 +381,12 @@ function VariantItem({
               max={variantDiscount.type === 'percentage' ? '100' : undefined}
               value={variantDiscount.value}
               onChange={(e) => handleDiscountChange(e.target.value, variantDiscount.type)}
-              className="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-14 sm:w-16 px-2 py-1 text-xs sm:text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
             <select
               value={variantDiscount.type === 'flat' ? 'flat' : 'percentage'}
               onChange={(e) => handleDiscountChange(variantDiscount.value.toString(), e.target.value as 'flat' | 'percentage')}
-              className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="px-2 py-1 text-xs sm:text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="flat">flat off</option>
               <option value="percentage">% off</option>
@@ -400,7 +402,7 @@ function VariantItem({
         ) : (
           <button
             onClick={() => handleDiscountChange('0', 'percentage')}
-            className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+            className="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-green-500 text-white rounded hover:bg-green-600 whitespace-nowrap"
           >
             Add Discount
           </button>

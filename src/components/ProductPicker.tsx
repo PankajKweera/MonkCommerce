@@ -175,14 +175,14 @@ export default function ProductPicker({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-        <div className="p-6 border-b">
+        <div className="p-4 sm:p-6 border-b">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">Select Products</h2>
+            <h2 className="text-xl sm:text-2xl font-bold">Select Products</h2>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 text-2xl"
+              className="text-gray-500 hover:text-gray-700 text-2xl sm:text-3xl"
             >
               ×
             </button>
@@ -192,13 +192,13 @@ export default function ProductPicker({
             placeholder="Search products..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div
           ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto p-6"
+          className="flex-1 overflow-y-auto p-4 sm:p-6"
         >
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
@@ -237,23 +237,23 @@ export default function ProductPicker({
                   isDisabled ? 'opacity-50 bg-gray-100' : ''
                 } ${isProductSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
               >
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-3 sm:gap-4">
                   <img
                     src={product.image?.src || '/placeholder.png'}
                     alt={product.title}
-                    className="w-20 h-20 object-cover rounded"
+                    className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded flex-shrink-0"
                   />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="flex items-center gap-2 cursor-pointer">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                      <label className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
                         <input
                           type="checkbox"
                           checked={isProductSelected}
                           onChange={() => toggleProduct(product.id)}
                           disabled={isDisabled}
-                          className="w-5 h-5"
+                          className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
                         />
-                        <span className="font-semibold">{product.title}</span>
+                        <span className="font-semibold text-sm sm:text-base truncate">{product.title}</span>
                       </label>
                       {isDisabled && (
                         <span className="text-xs text-red-500">Already in list</span>
@@ -296,17 +296,17 @@ export default function ProductPicker({
           )}
         </div>
 
-        <div className="p-6 border-t flex justify-end gap-3">
+        <div className="p-4 sm:p-6 border-t flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm sm:text-base"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
             disabled={selectedProducts.size === 0}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
           >
             Confirm Selection ({selectedProducts.size})
           </button>

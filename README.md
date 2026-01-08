@@ -173,42 +173,125 @@ The application uses the Monk Commerce API:
 
 ### Component Architecture
 
-- **Separation of Concerns**: Each component has a single responsibility
-  - `ProductList`: Manages the list and drag-drop logic
-  - `ProductItem`: Handles individual product display and interactions
-  - `ProductPicker`: Manages product selection and search
+**Approach**: I followed a component-based architecture with clear separation of concerns to ensure maintainability and reusability.
 
-### Drag and Drop
+- **ProductList**: Central component managing the product list state and drag-drop context. Uses `DndContext` from `@dnd-kit` to handle product reordering.
+- **ProductItem**: Self-contained component handling individual product display, variant management, and discount UI. Implements nested drag-and-drop for variants using a separate `DndContext`.
+- **ProductPicker**: Modal dialog component with its own state management for search, pagination, and product selection. Uses debouncing to optimize API calls.
 
-- Used `@dnd-kit` library for modern, accessible drag-and-drop
-- Supports both mouse and keyboard interactions
-- Visual feedback during dragging (opacity change)
+**Why this approach**: 
+- Each component is independently testable
+- Clear data flow from parent to child components
+- Easy to extend or modify individual features without affecting others
 
-### Pagination Strategy
+### Drag and Drop Implementation
 
-- Implemented scroll-based pagination for better UX
-- Loads 10 products at a time
-- Debounced search to reduce API calls
-- Prevents duplicate API calls with loading state
+**Challenge**: Implementing drag-and-drop for both products and variants while maintaining proper state updates.
 
-### Discount System
+**Solution**: 
+- Used `@dnd-kit` library for its accessibility features and modern API
+- Created separate drag contexts: one for products (in ProductList) and one for variants (nested in ProductItem)
+- Used `useRef` for loading state to prevent infinite re-renders in callbacks
+- Implemented proper ID mapping (`product-${id}` and `variant-${id}`) to avoid conflicts
 
-- Supports both product-level and variant-level discounts
-- Flat discounts in dollars and percentage discounts
-- Visual indication of original and discounted prices
-- Easy removal of discounts
+**Key Decisions**:
+- Chose `@dnd-kit` over `react-beautiful-dnd` for better TypeScript support and accessibility
+- Used `closestCenter` collision detection for intuitive drag behavior
+- Added visual feedback (opacity change) during dragging for better UX
 
-### State Management
+### Pagination & API Optimization
 
-- Used React hooks (useState) for local state management
-- Product state includes selected variants and discounts
-- Prevents duplicate products by tracking existing product IDs
+**Challenge**: Implementing scroll-based pagination without causing performance issues or duplicate API calls.
 
-### Error Handling
+**Solution**:
+- Implemented infinite scroll with a threshold (100px from bottom) to trigger next page load
+- Used `useRef` for `loadingRef` to track loading state without causing re-renders
+- Debounced search input (300ms delay) to reduce API calls while typing
+- Reset pagination state when search query changes
 
-- API errors are logged to console
-- Graceful handling of missing images
-- Validation for discount values
+**Performance Considerations**:
+- Limited API calls to 10 products per page to balance load time and user experience
+- Prevented duplicate requests by checking `loadingRef.current` before making API calls
+- Used `useCallback` to memoize functions and prevent unnecessary re-renders
+
+### Discount System Design
+
+**Challenge**: Supporting both product-level and variant-level discounts with inline editing (matching the design requirements).
+
+**Solution**:
+- Implemented inline discount controls (input + dropdown) instead of modal dialogs for better UX
+- Created separate state management for product discounts and variant discounts
+- Used a unified discount type (`flat` | `percentage`) for consistency
+- Real-time price calculation with visual indication (strikethrough original price, highlighted discounted price)
+
+**Design Decisions**:
+- Inline editing matches the provided design mockups
+- Immediate visual feedback when discount is applied
+- Easy removal with a simple × button
+
+### State Management Strategy
+
+**Approach**: Used React's built-in state management with hooks, keeping state as local as possible.
+
+**Structure**:
+- **App.tsx**: Manages the main product list state and picker visibility
+- **ProductList**: Handles product reordering and discount updates
+- **ProductItem**: Manages variant visibility and discount dialogs
+- **ProductPicker**: Manages search, selection, and pagination independently
+
+**Why not Redux/Context API**: 
+- The application state is relatively simple and doesn't require global state management
+- Local state with prop drilling is sufficient and keeps the code simpler
+- Easier to understand and maintain for this scope
+
+### Error Handling & Edge Cases
+
+**Implemented**:
+- API key validation with clear error messages
+- Network error handling with user-friendly messages
+- Graceful handling of missing product images (fallback to placeholder)
+- Input validation for discount values (min/max constraints)
+- Prevention of duplicate products using Set-based tracking
+- Handling of products with single vs multiple variants
+
+**Error Recovery**:
+- Clear error messages guide users to fix configuration issues
+- API errors are logged for debugging while showing user-friendly messages
+- Empty states handled gracefully (no products, no search results)
+
+### Code Quality & Best Practices
+
+**TypeScript**: 
+- Strict typing throughout for better IDE support and catch errors at compile time
+- Defined interfaces for all data structures (Product, SelectedProduct, Discount)
+
+**Performance**:
+- Memoized callbacks with `useCallback` to prevent unnecessary re-renders
+- Used refs for values that don't need to trigger re-renders
+- Optimized re-renders by keeping state local to components
+
+**Code Organization**:
+- Removed all comments for cleaner code (as per requirements)
+- Consistent naming conventions
+- Modular file structure for easy navigation
+
+### Technical Challenges & Solutions
+
+1. **Infinite API Call Loop**: 
+   - **Problem**: `loadProducts` callback was being recreated on every render due to `loading` dependency
+   - **Solution**: Used `loadingRef` instead of `loading` state in dependencies, preventing callback recreation
+
+2. **Nested Drag-and-Drop**:
+   - **Problem**: Variants needed drag-and-drop within products, which required nested contexts
+   - **Solution**: Created separate `DndContext` for variants with its own sensors and collision detection
+
+3. **Variant Reordering State**:
+   - **Problem**: Maintaining variant order while allowing reordering
+   - **Solution**: Used `selectedVariants` array to preserve order, mapped to actual variant objects for display
+
+4. **Duplicate Product Prevention**:
+   - **Problem**: Need to prevent same product being added twice, but allow re-selecting when editing
+   - **Solution**: Track `existingProductIds` and `editingProductId` separately, allowing edit but blocking duplicates
 
 ## Future Improvements
 
