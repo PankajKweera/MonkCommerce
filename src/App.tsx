@@ -32,9 +32,17 @@ function App() {
       newProducts.splice(editingIndex, 1, ...newSelectedProducts);
       setProducts(newProducts);
     } else {
-      const existingIds = new Set(products.map((p) => p.product.id));
+      const isProductVariantCombinationExists = (newProduct: SelectedProduct): boolean => {
+        return products.some((existing) => {
+          if (existing.product.id !== newProduct.product.id) return false;
+          const existingVariantIds = existing.selectedVariants.sort((a, b) => a - b);
+          const newVariantIds = newProduct.selectedVariants.sort((a, b) => a - b);
+          return JSON.stringify(existingVariantIds) === JSON.stringify(newVariantIds);
+        });
+      };
+
       const uniqueNewProducts = newSelectedProducts.filter(
-        (p) => !existingIds.has(p.product.id)
+        (p) => !isProductVariantCombinationExists(p)
       );
       setProducts([...products, ...uniqueNewProducts]);
     }
@@ -42,8 +50,6 @@ function App() {
     setIsPickerOpen(false);
     setEditingIndex(null);
   };
-
-  const existingProductIds = products.map((p) => p.product.id);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -91,8 +97,9 @@ function App() {
             setEditingIndex(null);
           }}
           onSelect={handleProductSelect}
-          existingProductIds={existingProductIds}
+          existingProducts={products}
           editingProductId={editingIndex !== null ? products[editingIndex]?.product.id : null}
+          editingProductVariants={editingIndex !== null ? products[editingIndex]?.selectedVariants : undefined}
         />
       </div>
     </div>

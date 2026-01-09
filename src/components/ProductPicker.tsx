@@ -1,21 +1,23 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { Product } from '../types';
+import type { Product, SelectedProduct } from '../types';
 import { fetchProducts } from '../services/api';
 
 interface ProductPickerProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (products: Product[], selectedVariants: Record<number, number[]>) => void;
-  existingProductIds: number[];
+  existingProducts: SelectedProduct[];
   editingProductId?: number | null;
+  editingProductVariants?: number[];
 }
 
 export default function ProductPicker({
   isOpen,
   onClose,
   onSelect,
-  existingProductIds,
+  existingProducts,
   editingProductId,
+  editingProductVariants,
 }: ProductPickerProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -86,13 +88,22 @@ export default function ProductPicker({
       setProducts([]);
       setCurrentPage(0);
       setHasMore(true);
-      setSelectedProducts(new Set());
-      setSelectedVariants({});
       setError(null);
       setSearchQuery('');
+      
+      if (editingProductId && editingProductVariants) {
+        setSelectedProducts(new Set([editingProductId]));
+        setSelectedVariants({
+          [editingProductId]: new Set(editingProductVariants),
+        });
+      } else {
+        setSelectedProducts(new Set());
+        setSelectedVariants({});
+      }
+      
       loadProducts(0, '', false);
     }
-  }, [isOpen, loadProducts]);
+  }, [isOpen, loadProducts, editingProductId, editingProductVariants]);
 
   const handleScroll = useCallback(() => {
     const container = scrollContainerRef.current;
@@ -145,10 +156,27 @@ export default function ProductPicker({
         newVars[productId] = new Set();
       }
       const variantSet = new Set(newVars[productId]);
+      
       if (variantSet.has(variantId)) {
         variantSet.delete(variantId);
+        if (variantSet.size === 0) {
+          setSelectedProducts((prev) => {
+            const newSet = new Set(prev);
+            newSet.delete(productId);
+            return newSet;
+          });
+          delete newVars[productId];
+          return newVars;
+        }
       } else {
         variantSet.add(variantId);
+        if (!selectedProducts.has(productId)) {
+          setSelectedProducts((prev) => {
+            const newSet = new Set(prev);
+            newSet.add(productId);
+            return newSet;
+          });
+        }
       }
       newVars[productId] = variantSet;
       return newVars;
@@ -168,7 +196,35 @@ export default function ProductPicker({
       }
     });
 
-    onSelect(selectedProductsList, variantsMap);
+    const duplicates: string[] = [];
+    const finalProducts: Product[] = [];
+    const finalVariants: Record<number, number[]> = {};
+
+    selectedProductsList.forEach((product) => {
+      const variantIds = variantsMap[product.id].sort((a, b) => a - b);
+      const isExactDuplicate = existingProducts.some((existing) => {
+        if (existing.product.id !== product.id) return false;
+        if (product.id === editingProductId) return false;
+        const existingVariantIds = existing.selectedVariants.sort((a, b) => a - b);
+        return JSON.stringify(existingVariantIds) === JSON.stringify(variantIds);
+      });
+
+      if (isExactDuplicate) {
+        duplicates.push(product.title);
+      } else {
+        finalProducts.push(product);
+        finalVariants[product.id] = variantsMap[product.id];
+      }
+    });
+
+    if (duplicates.length > 0) {
+      alert(`The following products with the same variants are already in the list:\n${duplicates.join('\n')}\n\nPlease select different variants or remove the existing products first.`);
+      return;
+    }
+
+    if (finalProducts.length > 0) {
+      onSelect(finalProducts, finalVariants);
+    }
     onClose();
   };
 
@@ -226,15 +282,35 @@ export default function ProductPicker({
           {products.map((product) => {
             const isProductSelected = selectedProducts.has(product.id);
             const productVariants = selectedVariants[product.id] || new Set();
-            const isDisabled = existingProductIds.includes(product.id) && 
-                              product.id !== editingProductId && 
-                              !isProductSelected;
+            
+            const checkIfExactCombinationExists = (): boolean => {
+              if (product.id === editingProductId) return false;
+              if (!isProductSelected || productVariants.size === 0) {
+                const allVariants = new Set(product.variants.map((v) => v.id));
+                const allVariantsArray = Array.from(allVariants).sort((a, b) => a - b);
+                return existingProducts.some((existing) => {
+                  if (existing.product.id !== product.id) return false;
+                  const existingVariantIds = existing.selectedVariants.sort((a, b) => a - b);
+                  return JSON.stringify(existingVariantIds) === JSON.stringify(allVariantsArray);
+                });
+              }
+              
+              const currentSelectedVariants = Array.from(productVariants).sort((a, b) => a - b);
+              
+              return existingProducts.some((existing) => {
+                if (existing.product.id !== product.id) return false;
+                const existingVariantIds = existing.selectedVariants.sort((a, b) => a - b);
+                return JSON.stringify(existingVariantIds) === JSON.stringify(currentSelectedVariants);
+              });
+            };
+            
+            const isExactDuplicate = checkIfExactCombinationExists();
 
             return (
               <div
                 key={product.id}
                 className={`mb-4 border rounded-lg p-4 ${
-                  isDisabled ? 'opacity-50 bg-gray-100' : ''
+                  isExactDuplicate ? 'border-red-300 bg-red-50' : ''
                 } ${isProductSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
               >
                 <div className="flex items-start gap-3 sm:gap-4">
@@ -250,23 +326,19 @@ export default function ProductPicker({
                           type="checkbox"
                           checked={isProductSelected}
                           onChange={() => toggleProduct(product.id)}
-                          disabled={isDisabled}
                           className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
                         />
                         <span className="font-semibold text-sm sm:text-base truncate">{product.title}</span>
                       </label>
-                      {isDisabled && (
-                        <span className="text-xs text-red-500">Already in list</span>
-                      )}
                     </div>
 
-                    {isProductSelected && (
+                    {product.variants.length > 1 ? (
                       <div className="mt-3 space-y-2">
                         <div className="text-sm font-medium text-gray-700">Select Variants:</div>
                         {product.variants.map((variant) => (
                           <label
                             key={variant.id}
-                            className="flex items-center gap-2 cursor-pointer text-sm"
+                            className="flex items-center gap-2 text-sm cursor-pointer"
                           >
                             <input
                               type="checkbox"
@@ -279,6 +351,25 @@ export default function ProductPicker({
                             </span>
                           </label>
                         ))}
+                      </div>
+                    ) : (
+                      <div className="mt-2">
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isProductSelected}
+                            onChange={() => toggleProduct(product.id)}
+                            className="w-4 h-4"
+                          />
+                          <span>
+                            {product.variants[0]?.title} - ${product.variants[0]?.price}
+                          </span>
+                        </label>
+                      </div>
+                    )}
+                    {isExactDuplicate && (
+                      <div className="mt-2 text-xs text-red-500 font-medium">
+                        This exact product with these variants is already in the list
                       </div>
                     )}
                   </div>
